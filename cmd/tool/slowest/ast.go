@@ -16,6 +16,11 @@ import (
 
 type skipStatement func(*ast.FuncDecl) (ast.Stmt, error)
 
+const (
+	defaultSkipPreset      = "default"
+	testingShortSkipPreset = "testing.Short"
+)
+
 func writeTestSkip(tcs []testjson.TestCase, skipStmt skipStatement) error {
 	fset := token.NewFileSet()
 	cfg := packages.Config{
@@ -93,7 +98,7 @@ func writeFile(path string, file *ast.File, fset *token.FileSet) error {
 
 func parseSkipStatement(text string) (ast.Stmt, error) {
 	switch text {
-	case "default", "testing.Short":
+	case defaultSkipPreset, testingShortSkipPreset:
 		return testingShortSkipStatement("t"), nil
 	}
 	// Add some required boilerplate around the statement to make it a valid file
@@ -108,7 +113,7 @@ func parseSkipStatement(text string) (ast.Stmt, error) {
 
 func newSkipStatement(text string) (skipStatement, error) {
 	switch text {
-	case "default", "testing.Short":
+	case defaultSkipPreset, testingShortSkipPreset:
 		return func(fd *ast.FuncDecl) (ast.Stmt, error) {
 			if fd.Type.Params == nil || len(fd.Type.Params.List) == 0 {
 				return nil, fmt.Errorf("%s has no test parameter for the testing.Short preset", fd.Name.Name)

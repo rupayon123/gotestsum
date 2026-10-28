@@ -18,7 +18,8 @@ func TestRunSkipStatementParameters(t *testing.T) {
 	for _, skipStmt := range []string{"testing.Short", "default", `if testing.Short() { custom.Skip("custom") }`} {
 		t.Run(skipStmt, func(t *testing.T) {
 			dir := t.TempDir()
-			assert.NilError(t, os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/slowestfixture\n\ngo 1.24.0\n"), 0600))
+			assert.NilError(t, os.WriteFile(
+				filepath.Join(dir, "go.mod"), []byte("module example.com/slowestfixture\n\ngo 1.24.0\n"), 0600))
 			const source = `package fixture
 import "testing"
 var custom = new(testing.T)
@@ -49,7 +50,7 @@ func TestBlank(_ *testing.T) { if t != "global" { panic("shadowed") } }
 			_, err = conf.Check("example.com/slowestfixture", fset, []*ast.File{file}, nil)
 			assert.NilError(t, err)
 
-			if skipStmt != "testing.Short" && skipStmt != "default" {
+			if skipStmt != testingShortSkipPreset && skipStmt != defaultSkipPreset {
 				var calls int
 				ast.Inspect(file, func(node ast.Node) bool {
 					selector, ok := node.(*ast.SelectorExpr)
@@ -71,7 +72,8 @@ func TestRunSkipStatementExample(t *testing.T) {
 	for _, skipStmt := range []string{"testing.Short", "default", `if testing.Short() { return }`} {
 		t.Run(skipStmt, func(t *testing.T) {
 			dir := t.TempDir()
-			assert.NilError(t, os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/examplefixture\n\ngo 1.24.0\n"), 0600))
+			assert.NilError(t, os.WriteFile(
+				filepath.Join(dir, "go.mod"), []byte("module example.com/examplefixture\n\ngo 1.24.0\n"), 0600))
 			const testSource = `package fixture
 import "testing"
 func TestSlow(slow *testing.T) { slow.Log("test") }
@@ -98,7 +100,7 @@ func Example() {
 			assert.NilError(t, os.WriteFile(jsonfile, []byte(results), 0600))
 			env.ChangeWorkingDir(t, dir)
 			err := Run("slowest", []string{"--jsonfile", jsonfile, "--skip-stmt", skipStmt})
-			if skipStmt == "testing.Short" || skipStmt == "default" {
+			if skipStmt == testingShortSkipPreset || skipStmt == defaultSkipPreset {
 				assert.ErrorContains(t, err, "Example has no test parameter")
 				for path, want := range map[string]string{testPath: testSource, examplePath: exampleSource} {
 					got, err := os.ReadFile(path)
